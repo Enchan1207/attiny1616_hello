@@ -6,4 +6,8 @@ project(cmake_avr_sdk
     LANGUAGES C
 )
 
+add_compile_options(
+    -Wall
+)
+
 add_subdirectory(src)
