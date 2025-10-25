@@ -1,0 +1,30 @@
+{
+    "version": 10,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 19,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "target",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "environment": {
+                "AVR_SDK_PATH": "$env{HOME}/cmake-avr",
+                "ENV_NAME": "avr"
+            },
+            "cacheVariables": {
+                "AVR_MCU": "attiny1616",
+                "AVR_FCPU": "20000000"
+            },
+            "toolchainFile": "$env{AVR_SDK_PATH}/cmake/avr_toolchain.cmake"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "target",
+            "configurePreset": "target"
+        }
+    ]
+}
