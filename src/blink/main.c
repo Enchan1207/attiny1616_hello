@@ -5,8 +5,8 @@ PORT_t* const port = &PORTA;
 const uint8_t pin = 7;
 
 int main() {
-    CCP = 0xD8;
-    CLKCTRL_MCLKCTRLB &= ~(1);
+    CCP = CCP_IOREG_gc;
+    CLKCTRL_MCLKCTRLB = CLKCTRL_PDIV_0_bm | CLKCTRL_PEN_bm;
 
     port->DIR |= (1 << pin);
     port->OUT &= ~(1 << pin);
