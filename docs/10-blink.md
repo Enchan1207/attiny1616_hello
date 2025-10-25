@@ -99,7 +99,7 @@ int main() {
 設定変更はこのようなコードで行うことができそうです(定数を使うと便利)。
 
 ```c
-CLKCTRL_MCLKCTRLB = CLKCTRL_PDIV_0_bm | CLKCTRL_PEN_bm;
+CLKCTRL_MCLKCTRLB &= ~CLKCTRL_PEN_bm;
 ```
 
 しかし先述の通りこのレジスタは _設定変更保護機能(CCP)により保護されてい_ るため、これを解除する必要があります。
