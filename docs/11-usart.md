@@ -64,3 +64,57 @@ void uart_send(uint8_t data) {
 ```
 
 ここまでの内容をまとめたコードは `usart_hello/main.c` に示しています。
+
+### 送信バッファ割込みを活用する
+
+`USART0.STATUS` を `while` でずっと監視し続けるのは骨が折れるので、送信バッファ割込みを活用してみます。
+
+データシート _24.3.4 割り込み_ によれば、
+
+> 0x02 DRE データレジスタエンプティ割り込み 送信バッファがエンプティ/新しいデータの受信準備完了
+>
+> 割り込み条件が発生するとステータス レジスタ(USART.STATUS) 内の対応する割り込みフラグがセットされます。制御 A レジスタ(USART.CTRLA) 内の対応するビットに書き込む事により、割り込み要因を有効または無効にします。
+> 有効にされた割り込み要因の割り込みフラグがセットされた時、割り込み要求が生成されます。割り込み要求は、割り込みフラグがクリアされるまでアクティブです。
+> 割り込みフラグをクリアするための詳細な方法は、USART.STATUS レジスタの説明を参照してください。
+
+_24.5.6 制御 A_ によれば、
+
+> Bit 5 – DREIE: データレジスタ エンプティ割り込みイネーブル
+>
+> このビットは、データレジスタ エンプティ割り込み(割り込みベクタ DRE)を有効にします。有効にされた割り込みは、USART.STATUS レジスタの DREIF がセットされた時にトリガされます。
+
+ということなので、データポインタと送信完了フラグを用意し……
+
+```c
+static const char* tx_data = NULL;
+static volatile bool tx_empty = true;
+```
+
+こんな感じでISRを構成し……
+
+```c
+// USART0データエンプティ割込み
+ISR(USART0_DRE_vect) {
+    if (*tx_data != '\0') {
+        USART0.TXDATAL = *tx_data++;
+    } else {
+        tx_empty = true;
+        USART0.CTRLA &= ~USART_DREIE_bm;
+    }
+}
+```
+
+関数 `uart_send` はこんな感じにすれば……
+
+```c
+void uart_send(const char* const data) {
+    while (!tx_empty);
+
+    tx_data = data;
+    tx_empty = false;
+    USART0.CTRLA |= USART_DREIE_bm;
+}
+```
+
+送信中にCPUをブロックすることがなくなりました 🎉
+ここまでの内容をまとめたコードは `usart_send_interrupt/main.c` に示しています。
