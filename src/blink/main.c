@@ -6,7 +6,7 @@ const uint8_t pin = 7;
 
 int main() {
     CCP = CCP_IOREG_gc;
-    CLKCTRL_MCLKCTRLB = CLKCTRL_PDIV_0_bm | CLKCTRL_PEN_bm;
+    CLKCTRL_MCLKCTRLB &= ~CLKCTRL_PEN_bm;
 
     port->DIR |= (1 << pin);
     port->OUT &= ~(1 << pin);
