@@ -153,3 +153,55 @@ uint8_t uart_recv() {
 ```
 
 ここまでの内容をまとめたコードは `usart_recv/main.c` に示しています。
+
+### 受信バッファ割込みを活用する
+
+受信バッファにも割込みがあるので、これを活用しましょう。
+
+データシート _24.5.6 制御 A_ によれば、
+
+> Bit 7 – RXCIE: 受信完了割り込みイネーブル
+>
+>このビットは、受信完了割り込み(割り込みベクタ RXC)を有効にします。有効にされた割り込みは、USART.STATUS レジスタの RXCIF がセットされた時にトリガされます。
+
+ということなので、データポインタを用意し……
+
+```c
+static volatile uint8_t data = 0x00;
+static volatile bool rx_available = false;
+```
+
+こんな感じでISRを構成し……
+
+```c
+// USART0受信完了割込み
+ISR(USART0_RXC_vect) {
+    data = USART0.RXDATAL;
+    rx_available = true;
+}
+```
+
+関数 `uart_init` 内で受信バッファ割込みを有効化し……
+
+```c
+void uart_init(void) {
+    cli();
+
+    USART0.BAUD = (uint16_t)USART_BAUD_RATE(BAUD_RATE);
+    USART0.CTRLB = USART_RXEN_bm;
+    USART0.CTRLA |= USART_RXCIE_bm;
+}
+```
+
+関数 `uart_recv` はこんな感じにすれば……
+
+```c
+uint8_t uart_recv() {
+    while (!rx_available);
+    rx_available = false;
+    return data;
+}
+```
+
+受信中にCPUをブロックすることがなくなりました 🎉
+ここまでの内容をまとめたコードは `usart_recv_interrupt/main.c` に示しています。
